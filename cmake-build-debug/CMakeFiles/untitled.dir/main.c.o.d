@@ -1,5 +1,5 @@
 CMakeFiles/untitled.dir/main.c.o: \
- /mnt/c/Users/franc/CLionProjects/3DGrahicsRenderer/main.c \
+ /mnt/c/Users/franc/CLionProjects/3DGraphicsEngineRenderer/main.c \
  /usr/include/stdc-predef.h /usr/include/SDL2/SDL.h \
  /usr/include/SDL2/SDL_main.h /usr/include/SDL2/SDL_stdinc.h \
  /usr/include/SDL2/SDL_config.h \

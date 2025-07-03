@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/c/Users/franc/CLionProjects/3DGrahicsRenderer/main.c" "CMakeFiles/3DGrahicsRenderer.dir/main.c.o" "gcc" "CMakeFiles/3DGrahicsRenderer.dir/main.c.o.d"
+  "/mnt/c/Users/franc/CLionProjects/3DGraphicsEngineRenderer/main.c" "CMakeFiles/untitled.dir/main.c.o" "gcc" "CMakeFiles/untitled.dir/main.c.o.d"
   )
 
 # Targets to which this target links.
