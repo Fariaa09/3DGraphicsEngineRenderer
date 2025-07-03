@@ -1,0 +1,1 @@
+/bin/gcc -g CMakeFiles/untitled.dir/main.c.o -o untitled  -lSDL2 

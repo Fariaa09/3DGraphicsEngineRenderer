@@ -1,0 +1,4 @@
+/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/bin/make -DCMAKE_C_COMPILER=/bin/gcc -DCMAKE_CXX_COMPILER=/bin/g++ -G "Unix Makefiles" -S /mnt/c/Users/franc/CLionProjects/3DGrahicsRenderer -B /mnt/c/Users/franc/CLionProjects/3DGrahicsRenderer/cmake-build-debug
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /mnt/c/Users/franc/CLionProjects/3DGrahicsRenderer/cmake-build-debug
