@@ -8,8 +8,9 @@ include_directories(/usr/include/SDL2)
 
 
 # Make the executable ---------------------------
-add_executable(untitled main.c)
-
+add_executable(untitled main.c
+               engine.c
+               engine.h)
 
 # Link the target libraries ---------------------
 # This is to link sdl2

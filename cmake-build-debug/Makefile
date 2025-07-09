@@ -129,6 +129,30 @@ untitled/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/untitled.dir/build.make CMakeFiles/untitled.dir/build
 .PHONY : untitled/fast
 
+engine.o: engine.c.o
+.PHONY : engine.o
+
+# target to build an object file
+engine.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/untitled.dir/build.make CMakeFiles/untitled.dir/engine.c.o
+.PHONY : engine.c.o
+
+engine.i: engine.c.i
+.PHONY : engine.i
+
+# target to preprocess a source file
+engine.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/untitled.dir/build.make CMakeFiles/untitled.dir/engine.c.i
+.PHONY : engine.c.i
+
+engine.s: engine.c.s
+.PHONY : engine.s
+
+# target to generate assembly for a file
+engine.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/untitled.dir/build.make CMakeFiles/untitled.dir/engine.c.s
+.PHONY : engine.c.s
+
 main.o: main.c.o
 .PHONY : main.o
 
@@ -162,6 +186,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... untitled"
+	@echo "... engine.o"
+	@echo "... engine.i"
+	@echo "... engine.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

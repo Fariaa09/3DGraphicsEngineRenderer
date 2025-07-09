@@ -4,92 +4,17 @@
 
 #include <SDL.h>
 #include <stdio.h>
-#include <math.h>
 
-typedef struct
-{
-    float x, y, z;
-} Vector;
+#include "engine.h"
 
-typedef struct
-{
-    Vector points[3];
-} Triangle;
-
-typedef struct
-{
-    // Dynamically allocated for ease of expansion
-    int nTris;
-    Triangle* tris;
-} Mesh;
-
-typedef struct
-{
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-
-    int nMeshes;
-    // Dynamically allocated for ease of expansion
-    Mesh* meshes;
-} Engine;
-
-typedef struct
-{
-    // Hardcoded the size because it should not change
-    float mat[4][4];
-} Matrix4x4;
-
-// Macros for error treatment
-#define CHECK_INITIALIZATION(msg)                                         \
-    do                                                                    \
-    {                                                                     \
-        if (SDL_Init(SDL_INIT_VIDEO) < 0) {                               \
-        fprintf(stderr, "[ERROR] %s! \n[SDL]: %s\n", msg, SDL_GetError());\
-        return 0;                                                         \
-        }                                                                 \
-    }while(0)
-
-#define CHECK_WINDOW_CREATION(x, msg)                             \
-    do                                                            \
-    {                                                             \
-        if (!(x)) {                                               \
-            fprintf(stderr, "[ERROR] %s! \n[SDL] %s", msg, SDL_GetError());\
-            SDL_Quit();                                           \
-            return 0;                                             \
-        }                                                         \
-    }while(0)
-
-#define CHECK_RENDERER_CREATION(window, x, msg)                   \
-    do                                                            \
-    {                                                             \
-        if (!(x)) {                                               \
-            fprintf(stderr, "[ERROR] %s! \n[SDL] %s", msg, SDL_GetError());\
-            SDL_DestroyWindow(window);                            \
-            SDL_Quit();                                           \
-            return 0;                                             \
-        }                                                         \
-    }while(0)
-
-// Macro to convert from degree to radians
-#define TO_RAD(x) (x / 180.0f * M_PI)
-
-#define WIDTH 800
-#define HEIGHT 800
-
-// Projection Matrix Values
-#define Z_NEAR 0.1f
-#define Z_FAR 1000.0f
-#define Q (Z_FAR / (Z_FAR - Z_NEAR))
-#define FOV 90.0f
-#define ASPECT_RATIO (WIDTH / HEIGHT)
-#define FOV_TAN (1.0f / tanf(TO_RAD(FOV * 0.5f)))
-
-Engine* engine;
 Vector camera = {0.0f, 0.0f, 0.0f};
 
-/*
- *  This builds the engine, giving it a window and a renderer
+/**
+ * Construct the engine (initialize the window, renderer, meshes, ...)
  *
+ * @param engine Engine to be initialized
+ *
+ * @return status
  */
 int constructEngine(Engine* engine)
 {
@@ -106,110 +31,18 @@ int constructEngine(Engine* engine)
     engine->renderer = renderer;
     // Set Background color to white
     SDL_SetRenderDrawColor(engine->renderer, 255, 255, 255, 255);
-
-    // Allocate memory for a single mesh for now
-    engine->meshes = malloc(sizeof(Mesh));
-    if (engine->meshes == NULL)
-    {
-        perror("[ERROR] ALLOCATING MEMORY FOR THE ENGINE MESHES FAILED!");
-    }
+    ALLOCATE(engine->meshes, sizeof(Mesh));
 
     return 1;
 }
 
-/*
- *  This function multiplies a 3x3 vector i by a 4x4 matrix m and outputs the
- *  result in a Vector o. This is used to calculate the projection of a Vector
- *  following the projection matrix that is defined
+/**
+ * Defines the necessary things for the engine to run and enters
+ * the main loop
  *
- */
-void multMatVec(const Vector* i, Vector* o, const Matrix4x4* m)
-{
-    // calculate the values
-    o->x = i->x * m->mat[0][0] + i->y * m->mat[1][0] + i->z * m->mat[2][0] + m->mat[3][0];
-    o->y = i->x * m->mat[0][1] + i->y * m->mat[1][1] + i->z * m->mat[2][1] + m->mat[3][1];
-    o->z = i->x * m->mat[0][2] + i->y * m->mat[1][2] + i->z * m->mat[2][2] + m->mat[3][2];
-    // Calculate the fourth value
-    const float w = i->x * m->mat[0][3] + i->y * m->mat[1][3] + i->z * m->mat[2][3] + m->mat[3][3];
-    // Divide to get the correct values on x, y, z
-    if (w != 0.0f)
-    {
-        o->x /= w;
-        o->y /= w;
-        o->z /= w;
-    }
-}
-
-/*
- * Constructs a 4x4 translation Matrix from a given translation Vector
- * Its rough but gets the job done
+ *  @param engine Engine that is going to be started
  *
- */
-void translate(const Vector* i, Vector* o, const Vector* v)
-{
-    const Matrix4x4 aux = {
-        .mat = {
-            {1, 0, 0, 0},
-            {0, 1, 0, 0},
-            {0, 0, 1, 0},
-            {v->x, v->y, v->z, 1}
-        }
-    };
-    multMatVec(i, o, &aux);
-}
-
-/*
- * Dot product of 2 vectors
- *
- */
-float dotProduct(const Vector* a, const Vector* b)
-{
-    return (a->x * b->x + a->y * b->y + a->z * b->z);
-}
-
-/*
- * Cross Productt of 2 Vectors
- *
- */
-Vector crossProduct(const Vector* a, const Vector* b)
-{
-    Vector n;
-    n.x = a->y * b->z - a->z * b->y;
-    n.y = a->z * b->x - a->x * b->z;
-    n.z = a->x * b->y - a->y * b->x;
-    return n;
-}
-
-void drawTriangle(const Triangle* t)
-{
-    // Draw the projection points
-    SDL_RenderDrawPoint(engine->renderer, t->points[0].x, t->points[0].y);
-    SDL_RenderDrawPoint(engine->renderer, t->points[1].x, t->points[1].y);
-    SDL_RenderDrawPoint(engine->renderer, t->points[2].x, t->points[2].y);
-    // Draw the triangle lines
-    SDL_RenderDrawLine(engine->renderer, t->points[0].x, t->points[0].y,
-                       t->points[1].x, t->points[1].y);
-    SDL_RenderDrawLine(engine->renderer, t->points[1].x, t->points[1].y,
-                       t->points[2].x, t->points[2].y);
-    SDL_RenderDrawLine(engine->renderer, t->points[2].x, t->points[2].y,
-                       t->points[0].x, t->points[0].y);
-}
-
-/*
- * Properly scales a Vector to the screen
- *
- */
-void scale(Vector* v)
-{
-    v->x += 1.0f;
-    v->y += 1.0f;
-    v->x *= 0.5f * WIDTH;
-    v->y *= 0.5f * HEIGHT;
-}
-
-/*
- *  This starts the engine, entering the main loop of execution.
- *
+ *  @return void
  */
 void start(const Engine* engine)
 {
@@ -231,6 +64,7 @@ void start(const Engine* engine)
     // Main Loop
     while (running)
     {
+        // TODO: Make this Matrices better and use less space
         Matrix4x4 rot_mat_x =
         {
             {
@@ -262,7 +96,7 @@ void start(const Engine* engine)
         };
 
         Vector translate_vec = {0.0f, 0.0f, 3.0f};
-
+        // Check to close the window
         while (SDL_PollEvent(&event))
             if (event.type == SDL_QUIT)
                 running = 0;
@@ -284,10 +118,7 @@ void start(const Engine* engine)
                     multMatVec(&mesh.tris[j].points[k], &rotated_x.points[k], &rot_mat_x);
                     multMatVec(&rotated_x.points[k], &rotated_z.points[k], &rot_mat_z);
                     translate(&rotated_z.points[k], &translated.points[k], &translate_vec);
-                    multMatVec(&translated.points[k], &projection.points[k], &proj_mat);
-                    scale(&projection.points[k]);
                 }
-
                 // Calculate 2 lines of the triangle (l1, l2) and get the normal through crossProduct
                 Vector l1 = {
                     translated.points[1].x - translated.points[0].x,
@@ -302,31 +133,33 @@ void start(const Engine* engine)
                 };
 
                 Vector normal = crossProduct(&l1, &l2);
-                // Normalize normal
-                const float l = sqrtf(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-                normal.x /= l;
-                normal.y /= l;
-                normal.z /= l;
-
+                normalizeVector(&normal);
                 // Calculate the vector from the camera to one point of the triangle
                 Vector t_camera = {
                     translated.points[1].x - camera.x,
                     translated.points[1].y - camera.y,
                     translated.points[1].z - camera.z
                 };
-
                 // Culling - Can be much better
-                if (dotProduct(&normal, &t_camera) < 0.0f)
-                    drawTriangle(&projection);
-
+                if (dotProduct(&normal, &t_camera) < 0.0f) {
+                    // Create a normalized light source
+                    Vector light_source = {0.0f, 0.0f, -1.0f};
+                    normalizeVector(&light_source);
+                    for (int k = 0; k < 3; k++) {
+                        // Process Projection and Scaling only for faces we see
+                        multMatVec(&translated.points[k], &projection.points[k], &proj_mat);
+                        scale(&projection.points[k]);
+                    }
+                    // See the alignment between the light source and the normal of the triangle
+                    projection.light = dotProduct(&normal, &light_source);
+                    fillTriangle(&projection, engine->renderer);
+                }
             }
             // Present the drawing in the screen
             SDL_RenderPresent(engine->renderer);
             theta += 0.1f;
         }
     }
-
-
     // Free Meshes array of triangles
     for (int i = 0; i < engine->nMeshes; i++)
         if (engine->meshes[i].tris != NULL)
@@ -336,46 +169,47 @@ void start(const Engine* engine)
     free(engine->meshes);
 }
 
+/**
+ * MAIN
+ *
+ * @param argc
+ * @param argv
+ * @return
+ */
 int main(int argc, char* argv[])
 {
-    engine = malloc(sizeof(Engine));
-    if (engine == NULL)
-    {
-        perror("[ERROR] ALLOCATING MEMORY FOR ENGINE FAILED!");
-        exit(EXIT_FAILURE);
-    }
+    // Allocate memory for our engine
+    Engine* engine;
+    ALLOCATE(engine, sizeof(Engine));
+
+    // Coded in place for now until we can actually import some models
     const Triangle tris[12] = {
-        // Back (z=0, normal deve apontar para -Z)
+        // Back
         {{{0, 0, 0}, {0, 1, 0}, {1, 1, 0}}},
         {{{0, 0, 0}, {1, 1, 0}, {1, 0, 0}}},
-        // Down (y=0, normal deve apontar para -Y)
+        // Down
         {{{0, 0, 0}, {1, 0, 0}, {1, 0, 1}}},
         {{{0, 0, 0}, {1, 0, 1}, {0, 0, 1}}},
-        // Right (x=1, normal deve apontar para +X)
+        // Right
         {{{1, 0, 0}, {1, 1, 0}, {1, 1, 1}}},
         {{{1, 0, 0}, {1, 1, 1}, {1, 0, 1}}},
-        // Left (x=0, normal deve apontar para -X)
+        // Left
         {{{0, 0, 0}, {0, 0, 1}, {0, 1, 1}}},
         {{{0, 0, 0}, {0, 1, 1}, {0, 1, 0}}},
-        // Top (y=1, normal deve apontar para +Y)
+        // Top
         {{{0, 1, 0}, {0, 1, 1}, {1, 1, 1}}},
         {{{0, 1, 0}, {1, 1, 1}, {1, 1, 0}}},
-        // Front (z=1, normal deve apontar para +Z)
+        // Front
         {{{0, 0, 1}, {1, 0, 1}, {1, 1, 1}}},
         {{{0, 0, 1}, {1, 1, 1}, {0, 1, 1}}}
     };
 
+    // Allocate space for our meshes triangles
     Mesh cubeMesh;
-    cubeMesh.tris = malloc(12 * sizeof(Triangle));
-    if (cubeMesh.tris == NULL)
-    {
-        perror("[ERROR] ALLOCATING MEMORY FOR THE MESH TRIANGLES FAILED!");
-        exit(EXIT_FAILURE);
-    }
-
     cubeMesh.nTris = 12;
-    // Copy the triangle array to mesh
-    memcpy(cubeMesh.tris, tris, 12 * sizeof(Triangle));
+    const int size_to_copy = sizeof(tris) * cubeMesh.nTris;
+    ALLOCATE(cubeMesh.tris, size_to_copy);
+    memcpy(cubeMesh.tris, tris, size_to_copy);
 
     if (constructEngine(engine))
     {
@@ -384,6 +218,7 @@ int main(int argc, char* argv[])
         start(engine);
     }
 
+    // Free things
     free(engine);
     return 0;
 }
