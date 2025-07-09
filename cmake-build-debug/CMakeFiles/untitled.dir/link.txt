@@ -1,1 +1,1 @@
-/bin/gcc -g CMakeFiles/untitled.dir/main.c.o -o untitled  -lSDL2 -lm 
+/bin/gcc -g CMakeFiles/untitled.dir/main.c.o CMakeFiles/untitled.dir/engine.c.o -o untitled  -lSDL2 -lm 
