@@ -1,8 +1,9 @@
-CMakeFiles/untitled.dir/main.c.o: \
- /mnt/c/Users/franc/CLionProjects/3DGraphicsEngineRenderer/main.c \
- /usr/include/stdc-predef.h /usr/include/SDL2/SDL.h \
- /usr/include/SDL2/SDL_main.h /usr/include/SDL2/SDL_stdinc.h \
- /usr/include/SDL2/SDL_config.h \
+CMakeFiles/untitled.dir/engine.c.o: \
+ /mnt/c/Users/franc/CLionProjects/3DGraphicsEngineRenderer/engine.c \
+ /usr/include/stdc-predef.h \
+ /mnt/c/Users/franc/CLionProjects/3DGraphicsEngineRenderer/engine.h \
+ /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \
+ /usr/include/SDL2/SDL_stdinc.h /usr/include/SDL2/SDL_config.h \
  /usr/include/x86_64-linux-gnu/SDL2/_real_SDL_config.h \
  /usr/include/SDL2/SDL_platform.h /usr/include/SDL2/begin_code.h \
  /usr/include/SDL2/close_code.h /usr/include/x86_64-linux-gnu/sys/types.h \
@@ -174,5 +175,4 @@ CMakeFiles/untitled.dir/main.c.o: \
  /usr/include/SDL2/SDL_power.h /usr/include/SDL2/SDL_render.h \
  /usr/include/SDL2/SDL_shape.h /usr/include/SDL2/SDL_system.h \
  /usr/include/SDL2/SDL_timer.h /usr/include/SDL2/SDL_version.h \
- /usr/include/SDL2/SDL_locale.h /usr/include/SDL2/SDL_misc.h \
- /mnt/c/Users/franc/CLionProjects/3DGraphicsEngineRenderer/engine.h
+ /usr/include/SDL2/SDL_locale.h /usr/include/SDL2/SDL_misc.h
