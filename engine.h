@@ -108,5 +108,6 @@ void scale(Vector* v);
 // Draw and fill function -> TODO: Update this to more generic functions
 void drawTriangle(const Triangle* t, SDL_Renderer* renderer);
 void fillTriangle(const Triangle* t, SDL_Renderer* renderer);
-
+// Load objects from file
+int loadFromFile(const char* file, Engine* e);
 #endif //ENGINE_H

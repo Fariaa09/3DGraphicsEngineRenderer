@@ -61,6 +61,7 @@ void start(const Engine* engine)
     };
 
     float theta = 0.0f;
+
     // Main Loop
     while (running)
     {
@@ -95,29 +96,30 @@ void start(const Engine* engine)
             }
         };
 
-        Vector translate_vec = {0.0f, 0.0f, 3.0f};
+        Vector translate_vec = {0.0f, -5.0f, 25.0f};
         // Check to close the window
         while (SDL_PollEvent(&event))
             if (event.type == SDL_QUIT)
                 running = 0;
 
-        // Renderer settings to draw white on black
         SDL_SetRenderDrawColor(engine->renderer, 0, 0, 0, 255);
         SDL_RenderClear(engine->renderer);
-        SDL_SetRenderDrawColor(engine->renderer, 255, 255, 255, 255);
 
-        for (int i = 0; i < engine->nMeshes; i++)
+        int meshes = engine->nMeshes;
+
+        for (int i = 0; i < meshes; i++)
         {
             const Mesh mesh = engine->meshes[i];
-            for (int j = 0; j < mesh.nTris; j++)
+            int tris = mesh.nTris;
+
+            for (int j = 0; j < tris; j++)
             {
-                Triangle translated, rotated_x, rotated_z, projection;
+                Triangle translated, rotated_x, projection;
                 for (int k = 0; k < 3; k++)
                 {
                     // Rotate -> Translate -> Project -> Scale
-                    multMatVec(&mesh.tris[j].points[k], &rotated_x.points[k], &rot_mat_x);
-                    multMatVec(&rotated_x.points[k], &rotated_z.points[k], &rot_mat_z);
-                    translate(&rotated_z.points[k], &translated.points[k], &translate_vec);
+                    multMatVec(&mesh.tris[j].points[k], &rotated_x.points[k], &rot_mat_y);
+                    translate(&rotated_x.points[k], &translated.points[k], &translate_vec);
                 }
                 // Calculate 2 lines of the triangle (l1, l2) and get the normal through crossProduct
                 Vector l1 = {
@@ -140,7 +142,7 @@ void start(const Engine* engine)
                     translated.points[1].y - camera.y,
                     translated.points[1].z - camera.z
                 };
-                // Culling - Can be much better
+                // Culling
                 if (dotProduct(&normal, &t_camera) < 0.0f) {
                     // Create a normalized light source
                     Vector light_source = {0.0f, 0.0f, -1.0f};
@@ -152,12 +154,14 @@ void start(const Engine* engine)
                     }
                     // See the alignment between the light source and the normal of the triangle
                     projection.light = dotProduct(&normal, &light_source);
+                    // Draw and fill the mesh
                     fillTriangle(&projection, engine->renderer);
+                    //drawTriangle(&projection, engine->renderer);
                 }
             }
             // Present the drawing in the screen
             SDL_RenderPresent(engine->renderer);
-            theta += 0.1f;
+            theta += 0.5f;
         }
     }
     // Free Meshes array of triangles
@@ -182,43 +186,19 @@ int main(int argc, char* argv[])
     Engine* engine;
     ALLOCATE(engine, sizeof(Engine));
 
-    // Coded in place for now until we can actually import some models
-    const Triangle tris[12] = {
-        // Back
-        {{{0, 0, 0}, {0, 1, 0}, {1, 1, 0}}},
-        {{{0, 0, 0}, {1, 1, 0}, {1, 0, 0}}},
-        // Down
-        {{{0, 0, 0}, {1, 0, 0}, {1, 0, 1}}},
-        {{{0, 0, 0}, {1, 0, 1}, {0, 0, 1}}},
-        // Right
-        {{{1, 0, 0}, {1, 1, 0}, {1, 1, 1}}},
-        {{{1, 0, 0}, {1, 1, 1}, {1, 0, 1}}},
-        // Left
-        {{{0, 0, 0}, {0, 0, 1}, {0, 1, 1}}},
-        {{{0, 0, 0}, {0, 1, 1}, {0, 1, 0}}},
-        // Top
-        {{{0, 1, 0}, {0, 1, 1}, {1, 1, 1}}},
-        {{{0, 1, 0}, {1, 1, 1}, {1, 1, 0}}},
-        // Front
-        {{{0, 0, 1}, {1, 0, 1}, {1, 1, 1}}},
-        {{{0, 0, 1}, {1, 1, 1}, {0, 1, 1}}}
-    };
-
-    // Allocate space for our meshes triangles
-    Mesh cubeMesh;
-    cubeMesh.nTris = 12;
-    const int size_to_copy = sizeof(tris) * cubeMesh.nTris;
-    ALLOCATE(cubeMesh.tris, size_to_copy);
-    memcpy(cubeMesh.tris, tris, size_to_copy);
-
     if (constructEngine(engine))
     {
-        memcpy(engine->meshes, &cubeMesh, sizeof(cubeMesh));
-        engine->nMeshes = 1;
-        start(engine);
-    }
+        printf("[DEBUG] ENGINE WAS SUCCESSFULLY CONSTRUCTED\n");
+        if (loadFromFile("testMesh.obj", engine))
+        {
+            printf("[DEBUG] MESH LOADING WAS SUCCESSFUL. STARTING ENGINE...\n");
+            start(engine);
+        } else
+            printf("[ERROR] OBJECT COULDN'T BE LOADED FROM FILE\n");
 
-    // Free things
+    } else
+        printf("[ERROR] ENGINE FAILED TTO BE CONSTRUCTED");
+
     free(engine);
     return 0;
 }

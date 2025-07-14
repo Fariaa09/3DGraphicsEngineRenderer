@@ -3,7 +3,10 @@
 //
 
 #include "engine.h"
+
 #include <math.h>
+#include <stdio.h>
+
 
 /**
  *  This function multiplies a 3x3 vector i by a 4x4 matrix m and outputs the
@@ -48,9 +51,9 @@ void translate(const Vector* i, Vector* o, const Vector* v)
     // Create a 4x4 matrix that translates a vector i by v
     const Matrix4x4 aux = {
         .mat = {
-            {   1,    0,    0, 0},
-            {   0,    1,    0, 0},
-            {   0,    0,    1, 0},
+            {1, 0, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 0},
             {v->x, v->y, v->z, 1}
         }
     };
@@ -99,7 +102,9 @@ Vector crossProduct(const Vector* a, const Vector* b)
 void normalizeVector(Vector* v)
 {
     const float m = sqrtf(v->x * v->x + v->y * v->y + v->z * v->z);
-    v->x /= m; v->y /= m; v->z /= m;
+    v->x /= m;
+    v->y /= m;
+    v->z /= m;
 }
 
 /**
@@ -112,6 +117,7 @@ void normalizeVector(Vector* v)
  */
 void drawTriangle(const Triangle* t, SDL_Renderer* renderer)
 {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     // Draw the points
     SDL_RenderDrawPoint(renderer, t->points[0].x, t->points[0].y);
     SDL_RenderDrawPoint(renderer, t->points[1].x, t->points[1].y);
@@ -130,9 +136,11 @@ void drawTriangle(const Triangle* t, SDL_Renderer* renderer)
  */
 void fillTriangle(const Triangle* t, SDL_Renderer* renderer)
 {
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     // Define triangle vertices
     SDL_Vertex vertices[3];
-    for (int i = 0; i  < 3; i++) {
+    for (int i = 0; i < 3; i++)
+    {
         // Position
         vertices[i].position.x = t->points[i].x;
         vertices[i].position.y = t->points[i].y;
@@ -159,4 +167,126 @@ void scale(Vector* v)
     v->y += 1.0f;
     v->x *= 0.5f * WIDTH;
     v->y *= 0.5f * HEIGHT;
+}
+
+/**
+ *  Load an object from a .obj file
+ *
+ * @param file name of the file to load the object from
+ * @param e engine that loads the object
+ *
+ * @return 0 for success, 1 for failure
+ */
+int loadFromFile(const char* file, Engine* e)
+{
+    e->nMeshes = 1;
+
+    printf("[DEBUG] FILE: %s\n", file);
+    FILE* fp = fopen(file, "r");
+    if (fp == NULL)
+    {
+        perror("[ERROR] COULDN'T OPEN THE FILE!");
+        return 0;
+    }
+    // Read the file
+    char line[128];
+    // Initial size of
+    int v_count = 0;
+    int f_count = 0;
+    // Get number of vertices anf faces
+    while (fgets(line, sizeof(line), fp))
+        if (line[0] == 'v' && line[1] == ' ')
+            v_count++;
+        else if (line[0] == 'f' && line[1] == ' ')
+            f_count++;
+
+    printf("[DEBUG] NUMBER OF VERTICES FOUND: %d\n", v_count);
+    printf("[DEBUG] NUMBER OF FACES FOUND: %d\n", f_count);
+
+    fclose(fp);
+    fopen(file, "r");
+
+    Vector vertices[v_count];
+    Mesh mesh; mesh.nTris = f_count;
+    ALLOCATE(mesh.tris, f_count * sizeof(Triangle));
+    int v_pos = 0, f_pos = 0;
+
+    while (fgets(line, sizeof(line), fp))
+    {
+        // Read a Vertex Line
+        if (line[0] == 'v' && line[1] == ' ')
+        {
+            float x, y, z;
+            sscanf(line, "v %f %f %f", &x, &y, &z);
+            // Store in the vertex array
+            const Vector v = { x, y, z };
+            vertices[v_pos++] = v;
+            // Debug message to be sure of the information read
+            printf("[DEBUG] VERTEX %d READ FROM FILE: %.2f, %.2f, %.2f\n", v_pos, x, y, z);
+        }
+        // Read a Face Line - supports multiple formats and does automatic triangulation
+        else if (line[0] == 'f' && line[1] == ' ')
+        {
+            char* ptr = line + 2;
+            int v_indices[5];
+            int count = 0;
+
+            while (*ptr && count < 5) {
+                int v = 0, vt = 0, vn = 0;
+                int matches = sscanf(ptr, "%d/%d/%d", &v, &vt, &vn);
+
+                if (matches != 3) {
+                    matches = sscanf(ptr, "%d//%d", &v, &vn);
+                    if (matches != 2) {
+                        matches = sscanf(ptr, "%d/%d", &v, &vt);
+                        if (matches != 2) {
+                            matches = sscanf(ptr, "%d", &v);
+                            if (matches != 1) {
+                                fprintf(stderr, "[ERROR] FACE FORMAT IS NOT VALID: %s", ptr);
+                                break;
+                            }
+                        }
+                    }
+                }
+                // Convert base 1 to base 0 for array indices
+                v_indices[count++] = v - 1;
+                // Go tto the next vertex
+                while (*ptr && *ptr != ' ') ptr++;
+                while (*ptr == ' ') ptr++;
+            }
+
+            if (count < 3) {
+                fprintf(stderr, "[ERROR] FACE WITH LESS THEN 3 VERTICES DETECTED: %s", line);
+            } else
+            {
+                // Automatic triangulation of faces that are not triangles
+                for (int i = 1; i < count - 1; i++) {
+                    const Triangle t = {
+                        vertices[v_indices[0]],
+                        vertices[v_indices[i]],
+                        vertices[v_indices[i + 1]]
+                    };
+
+                    if (f_pos + 1 > mesh.nTris)
+                    {
+                        mesh.nTris++;
+                        do
+                        {
+                            mesh.tris = realloc(mesh.tris, mesh.nTris * sizeof(Triangle));
+                            if (mesh.tris == NULL)
+                                printf("[DEBUG] ERROR REALLOCATING MESH %d TRIANGLES", i);
+                        } while (mesh.tris == NULL);
+                    }
+                    mesh.tris[f_pos++] = t;
+                    printf("[DEBUG] TRI: %d, %d, %d\n", v_indices[0], v_indices[i], v_indices[i + 1]);
+                }
+            }
+        }
+    }
+    // Put mesh on engine TODO: Make this more solid
+    ALLOCATE(e->meshes, sizeof(Mesh));
+    e->meshes[0] = mesh;
+    // Close file
+    fclose(fp);
+    return 1;
 }
